@@ -93,8 +93,11 @@
 	margin: 5px 5px 0 0;
 	padding: 4px;
 }
-.sub-user.active{
+.sub-user.active-blue{
 	background-color: rgb(220, 251, 255);
+}
+.sub-user.active-green{
+	background-color: rgb(224, 255, 217);
 }
 
 .message-form{

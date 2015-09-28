@@ -94,12 +94,15 @@
 		var box_id = $(this).data('box-id');
 
 		// change sub-users
-		$('#chat-users').find('.sub-user').removeClass('active');
-		$(this).addClass('active');
-		$('#sub-user-' + $(this).data('second-id') + '-' + $(this).data('one-id')).addClass('active');
+		var class_1 = $(this).data('one-id') > $(this).data('second-id') ? 'active-green' : 'active-blue';
+		var class_2 = $(this).data('one-id') < $(this).data('second-id') ? 'active-green' : 'active-blue';
+		$('#chat-users').find('.sub-user').removeClass('active-green active-blue');
+		$(this).addClass(class_1);
+		$('#sub-user-' + $(this).data('second-id') + '-' + $(this).data('one-id')).addClass(class_2);
 		// remove new-messages
 //		$('#chat-users').find('.new-messages').removeClass('active')
 //		.text('0');
+
 		changeMessagesBox(box_id);
 	});
 	

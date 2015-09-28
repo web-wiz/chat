@@ -62,6 +62,7 @@
 		$(this).addClass('active');
 		$('#chat-users').find('.new-messages').removeClass('active')
 		.text('0');
+		
 		changeMessagesBox(to_id);
 	});
 	
