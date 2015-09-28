@@ -9,12 +9,14 @@
 
 				<div class="panel-body">
 					<div id="chat-messages" class="chat-messages">
-						<div class="chat-messages-box common-box active"></div>
+						<div class="chat-messages-box common-box active">
+							<div class="chat-message">Choose user to send message...</div>
+						</div>
 						@foreach( $users_list as $one )
 							@if(isset($messages[$one->id]) && count($messages[$one->id]) > 0 )
 								<div id="messages-box-{{ $one->id }}" class="chat-messages-box" data-id="{{ $one->id }}">
 									@foreach($messages[$one->id] as $msg)
-										<div class="chat-message {{ $msg->to_id == $user->id ? 'message-from-user' : 'message-to-user' }}">{{ $msg->to_id == $user->id ? $one->name : 'Me' }}: {{{ $msg->message }}}</div>
+										<div id="message-{{ $msg->id }}" class="chat-message {{ $msg->to_id == $user->id ? 'message-from-user' : 'message-to-user' }}">{{ $msg->to_id == $user->id ? $one->name : 'Me' }}: {{{ $msg->message }}}</div>
 									@endforeach
 								</div>
 							@else
@@ -81,11 +83,12 @@
 	}
 	
 	// put message into chatbox
-	function addMessageToChatBox(message, m_class)
+	function addMessageToChatBox(message, m_class, msg_id)
 	{
 		m_class = m_class || '';
+		msg = msg_id || false;
 		
-		$("#chat-messages").children('.chat-messages-box.active').append('<div class="chat-message ' + m_class + '">' + message + '</div>');
+		$("#chat-messages").children('.chat-messages-box.active').append('<div ' + (msg_id != false ? 'id="message-' + msg_id + '"' : '') + ' class="chat-message ' + m_class + '">' + message + '</div>');
 		$("#chat-messages").scrollTop($("#chat-messages")[0].scrollHeight);
 	}
 	
@@ -106,8 +109,8 @@
 		// connection opened
 		conn.onopen = function(e)
 		{
-	        clearMessageBox();
-		    addMessageToChatBox("Choose user to send message...");
+//	        clearMessageBox();
+//		    addMessageToChatBox("Choose user to send message...");
 		};
 
 		// connection closed or cannot be established
@@ -187,18 +190,29 @@
 					.find('.chat-user-status').text('Offline');
 				}
 			}
-			else if( data.type = 'message' )
+			else if( data.type == 'message' )
 			{
 				if($('#messages-box-' + data.from_id).hasClass('active'))
 				{
-	    			addMessageToChatBox(data.from_name + ': ' + data.message, 'message-from-user');
+	    			addMessageToChatBox(data.from_name + ': ' + data.message, 'message-from-user', data.message_id);
 				}
 				else
 				{
 					// make a notification about new messages
 					newMessageNotification( data.from_id );
-					$( '#messages-box-' + data.from_id ).append('<div class="chat-message message-from-user">' + data.from_name + ': ' + data.message + '</div>');
+					$( '#messages-box-' + data.from_id ).append('<div id="message-' + data.message_id + '" class="chat-message message-from-user">' + data.from_name + ': ' + data.message + '</div>');
 				}
+			}
+			else if( data.type == 'delete' )
+			{
+				for(key in data.message_ids)
+				{
+					$('#message-' + data.message_ids[key]).remove();
+				}
+			}
+			else if( data.type == 'self' )
+			{
+				addMessageToChatBox("Me: " + data.message, 'message-to-user', data.message_id);
 			}
 		};
 
@@ -214,8 +228,6 @@
 					// clear box and input
 					$("#chat-messages").children('.chat-messages-box.active').removeClass('empty-messages-box');
 					$(this).val("");
-
-					addMessageToChatBox("Me: " + message, 'message-to-user');
 
 					conn.send(JSON.stringify(
 						{

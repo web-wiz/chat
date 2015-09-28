@@ -9,14 +9,16 @@
 
 				<div class="panel-body">
 					<div id="chat-messages" class="chat-messages">
-						<div class="chat-messages-box common-box active"></div>
+						<div class="chat-messages-box common-box active">
+							<div class="chat-message">Choose chat list...</div>
+						</div>
 						@foreach( $users_list as $one )
 							@foreach( $users_list as $second )
 								@if($one->id < $second->id)
 									@if(isset($messages[$one->id][$second->id]) && count($messages[$one->id][$second->id]) > 0)
 										<div id="messages-box-{{ $one->id }}-{{ $second->id }}" class="chat-messages-box" data-id="{{ $one->id }}-{{ $second->id }}">
 											@foreach($messages[$one->id][$second->id] as $msg)
-												<div class="chat-message {{ $msg->to_id == $one->id ? 'message-from-user' : 'message-to-user' }}">{{ $msg->from_id == $one->id ? $one->name : $second->name }}: {{{ $msg->message }}}</div>
+												<div id="message-{{ $msg->id }}" class="chat-message {{ $msg->to_id == $one->id ? 'message-from-user' : 'message-to-user' }}" data-id="{{ $msg->id }}">{{ $msg->from_id == $one->id ? $one->name : $second->name }}: {{{ $msg->message }}}</div>
 											@endforeach
 										</div>
 									@else
@@ -45,10 +47,7 @@
 						@endforeach
 					</ul>
 					<div class="clearfix"></div>
-					<div class="message-form">
-						<span class="message-label">Write here</span>
-						<input id="message-input" class="message-input" name="chatText" type="text">
-					</div>
+					<span id="delete" class="messages-delete">Delete messages</span>
 				</div>
 			</div>
 		</div>
@@ -57,12 +56,39 @@
 
 <script>
 	// config
+	var conn		= '';
 	var userName	= "{{ $user->name }}";
 	var userId		= "{{ $user->id }}";
 	var port	= "{{ $chat_port }}";
 	var uri		= "{{ explode(':', str_replace('http://', '', str_replace('https://', '', App::make('url')->to('/'))))[0] }}";
 	port = port.length == 0 ? '9090' : port;
 
+	// choosing messages to delete
+	$('.chat-messages-box').on('click', '.chat-message', function(){
+		$(this).toggleClass('checked');
+	});
+	
+	// delete messages
+	$('#delete').on('click', function(){
+		var $messages = $('#chat-messages').children('.chat-messages-box.active').find('.chat-message.checked');
+		if( $messages.length > 0 )
+		{
+			var message_ids = [];
+			$messages.each(function(){
+				message_ids.push($(this).data('id'));
+			});
+
+			conn.send(JSON.stringify(
+				{
+					message_ids : message_ids,
+					user_ids: $('#chat-messages').children('.chat-messages-box.active').data('id')
+				}
+			));
+			
+			$messages.remove();
+		}
+	});
+	
 	// choosing user event
 	$('#chat-users').on( 'click', '.sub-user', function(){
 		var box_id = $(this).data('box-id');
@@ -95,11 +121,12 @@
 	}
 	
 	// put message into chatbox
-	function addMessageToChatBox(message, m_class)
+	function addMessageToChatBox(message, m_class, msg_id)
 	{
 		m_class = m_class || '';
+		msg = msg_id || false;
 		
-		$("#chat-messages").children('.chat-messages-box.active').append('<div class="chat-message ' + m_class + '">' + message + '</div>');
+		$("#chat-messages").children('.chat-messages-box.active').append('<div ' + (msg_id != false ? 'id="message-' + msg_id + '"' : '') + ' class="chat-message ' + m_class + '" data-id="' + msg_id + '">' + message + '</div>');
 		$("#chat-messages").scrollTop($("#chat-messages")[0].scrollHeight);
 	}
 	
@@ -115,13 +142,13 @@
 	$(document).ready(function(){
 
 		// Open WS connection
-		var conn = new WebSocket('ws://'+uri+':'+port);
+		conn = new WebSocket('ws://'+uri+':'+port);
 
 		// connection opened
 		conn.onopen = function(e)
 		{
-	        clearMessageBox();
-		    addMessageToChatBox("Choose chat list...");
+//	        clearMessageBox();
+//		    addMessageToChatBox("Choose chat list...");
 		};
 
 		// connection closed or cannot be established
@@ -187,7 +214,7 @@
 						// append new user
 						$('#chat-users').append('<li id="user-' + data.user_id + '" class="chat-user online" data-name="' + data.user_name + '" data-id="' + data.user_id + '"><span class="chat-user-name">' + data.user_name + '</span><span class="chat-user-status">Online</span><span class="new-messages">0</span><div class="clearfix"></div></li>');
 						// append box for this user 
-						$('#chat-messages').append('<div id="messages-box-' + data.user_id + '" class="chat-messages-box empty-messages-box" data-id="' + data.user_id + '">');
+//						$('#chat-messages').append('<div id="messages-box-' + data.user_id + '" class="chat-messages-box empty-messages-box" data-id="' + data.user_id + '">');
 					}
 					else // new user logged in user
 					{
@@ -201,20 +228,20 @@
 					.find('.chat-user-status').text('Offline');
 				}
 			}
-			else if( data.type = 'message' )
+			else if( data.type == 'message' )
 			{
 				var box_id = data.from_id < data.to_id ? data.from_id + '-' + data.to_id : data.to_id + '-' + data.from_id;
 				var msg_class = data.from_id < data.to_id ? 'message-to-user' : 'message-from-user';
 
 				if($('#messages-box-' + box_id).hasClass('active'))
 				{
-	    			addMessageToChatBox(data.from_name + ': ' + data.message, msg_class);
+	    			addMessageToChatBox(data.from_name + ': ' + data.message, msg_class, data.message_id);
 				}
 				else
 				{
 					// make a notification about new messages
 //					newMessageNotification( data.from_id );
-					$( '#messages-box-' + box_id ).append('<div class="chat-message ' + msg_class + '">' + data.from_name + ': ' + data.message + '</div>');
+					$( '#messages-box-' + box_id ).append('<div id="message-' + data.message_id + '" class="chat-message ' + msg_class + '" dataid="' + data.message_id + '">' + data.from_name + ': ' + data.message + '</div>');
 				}
 			}
 		};

@@ -134,10 +134,17 @@ class Chat implements MessageComponentInterface
 										'type'		=> 'message',
 										'from_id'	=> $conn->user_id,
 										'from_name'	=> $conn->name,
+										'message_id'	=> $message->id,
 										'message'	=> strip_tags($data->message) /** @todo must to replace by HTMLPurifier for full XSS-prevention **/
 									)));
 								}
 							}
+							// self message
+							$conn->send(json_encode(array(
+								'type'		=> 'self',
+								'message_id'	=> $message->id,
+								'message'	=> strip_tags($data->message) /** @todo must to replace by HTMLPurifier for full XSS-prevention **/
+							)));
 							// send message to admin
 							if($admin)
 							{
@@ -147,6 +154,7 @@ class Chat implements MessageComponentInterface
 									'to_id'		=> $data->to_id,
 									'from_name'	=> $conn->name,
 									'to_name'	=> $to_user->name,
+									'message_id'	=> $message->id,
 									'message'	=> strip_tags($data->message) /** @todo must to replace by HTMLPurifier for full XSS-prevention **/
 								)));
 							}
@@ -165,7 +173,25 @@ class Chat implements MessageComponentInterface
 				}
 				else // current user is admin
 				{
+					$client_ids = explode( '-', $data->user_ids );
+					
+					// delete from db
+					Message::destroy($data->message_ids);
 
+					// delete from users chat
+					foreach($this->clients as $client) 
+					{
+						if(in_array($client->user_id, $client_ids)) 
+						{
+							$client->send(json_encode(array(
+								'type'		=> 'delete',
+//								'from_id'	=> $client_ids[0] == $client->user_id ? $client_ids[1] : $client_ids[0],
+								'message_ids'	=> $data->message_ids,
+							)));
+						}
+					}
+					
+					echo "Delete messages " . implode(', ', $data->message_ids) . "\n";
 				}
 			}
 			else // user not found
