@@ -215,11 +215,27 @@
 					if($('#user-' + data.user_id).length == 0) // new registred user
 					{
 						// append new user
-						$('#chat-users').append('<li id="user-' + data.user_id + '" class="chat-user online" data-name="' + data.user_name + '" data-id="' + data.user_id + '"><span class="chat-user-name">' + data.user_name + '</span><span class="chat-user-status">Online</span><span class="new-messages">0</span><div class="clearfix"></div></li>');
-						// append box for this user 
-//						$('#chat-messages').append('<div id="messages-box-' + data.user_id + '" class="chat-messages-box empty-messages-box" data-id="' + data.user_id + '">');
+						$('#chat-users').append('<li id="user-' + data.user_id + '" class="chat-user online" data-name="' + data.user_name + '" data-id="' + data.user_id + '"><span class="chat-user-name">' + data.user_name + '</span><span class="chat-user-status">Online</span><span class="new-messages">0</span><div class="clearfix"></div><ul class="sub-users-list"></ul></li>');
+						$('#chat-users').find('.sub-users-list').each(function(){
+							// add this user to others
+							var cur_id = $(this).parent('.chat-user').data('id');
+							if( cur_id != data.user_id )
+							{
+								var cur_name = $(this).parent('.chat-user').data('name');
+								var box_id = cur_id < data.user_id ? cur_id + '-' + data.user_id : data.user_id + '-' + cur_id;
+								$(this).append('<li id="sub-user-' + cur_id + '-' + data.user_id + '" class="sub-user" data-box-id="' + box_id + '" data-one-id="' + cur_id + '" data-second-id="' + data.user_id + '">' + data.user_name + '</li>');
+								// add others to this user
+								$('#user-' + data.user_id).children('.sub-users-list').append('<li id="sub-user-' + data.user_id + '-' + cur_id + '" class="sub-user" data-box-id="' + box_id + '" data-one-id="' + data.user_id + '" data-second-id="' + cur_id + '">' + cur_name + '</li>');
+								// append boxes for this user 
+								$('#chat-messages').append('<div id="messages-box-' + box_id + '" class="chat-messages-box empty-messages-box" data-id="' + box_id + '">');
+							}
+						});
+						$('.chat-messages-box').off();
+						$('.chat-messages-box').on('click', '.chat-message', function(){
+							$(this).toggleClass('checked');
+						});
 					}
-					else // new user logged in user
+					else // new logged in user
 					{
 						$('#user-' + data.user_id).addClass( 'online' )
 						.find('.chat-user-status').text('Online');
@@ -235,7 +251,9 @@
 			{
 				var box_id = data.from_id < data.to_id ? data.from_id + '-' + data.to_id : data.to_id + '-' + data.from_id;
 				var msg_class = data.from_id < data.to_id ? 'message-to-user' : 'message-from-user';
-
+				
+				$( '#messages-box-' + box_id ).removeClass('empty-messages-box');
+				
 				if($('#messages-box-' + box_id).hasClass('active'))
 				{
 	    			addMessageToChatBox(data.from_name + ': ' + data.message, msg_class, data.message_id);
@@ -244,7 +262,7 @@
 				{
 					// make a notification about new messages
 //					newMessageNotification( data.from_id );
-					$( '#messages-box-' + box_id ).append('<div id="message-' + data.message_id + '" class="chat-message ' + msg_class + '" dataid="' + data.message_id + '">' + data.from_name + ': ' + data.message + '</div>');
+					$( '#messages-box-' + box_id ).append('<div id="message-' + data.message_id + '" class="chat-message ' + msg_class + '" data-id="' + data.message_id + '">' + data.from_name + ': ' + data.message + '</div>');
 				}
 			}
 		};

@@ -193,6 +193,8 @@
 			}
 			else if( data.type == 'message' )
 			{
+				$( '#messages-box-' + data.from_id ).removeClass('empty-messages-box');
+
 				if($('#messages-box-' + data.from_id).hasClass('active'))
 				{
 	    			addMessageToChatBox(data.from_name + ': ' + data.message, 'message-from-user', data.message_id);
