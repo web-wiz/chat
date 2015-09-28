@@ -27,7 +27,7 @@ class UsersTableSeeder extends Seeder {
 			[
 				'id'		=> 3,
 				'name'     	=> 'Hobbits',
-				'email'    	=> 'hobit@shire.net',
+				'email'    	=> 'hobbit@shire.net',
 				'password' 	=> Hash::make('123456'),
 				'roles' 	=> 1
 			],
