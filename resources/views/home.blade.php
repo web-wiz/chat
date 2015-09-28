@@ -191,13 +191,13 @@
 			{
 				if($('#messages-box-' + data.from_id).hasClass('active'))
 				{
-	    			addMessageToChatBox(data.message, 'message-from-user');
+	    			addMessageToChatBox(data.from_name + ': ' + data.message, 'message-from-user');
 				}
 				else
 				{
 					// make a notification about new messages
 					newMessageNotification( data.from_id );
-					$( '#messages-box-' + data.from_id ).append('<div class="chat-message message-from-user">' + data.message + '</div>');
+					$( '#messages-box-' + data.from_id ).append('<div class="chat-message message-from-user">' + data.from_name + ': ' + data.message + '</div>');
 				}
 			}
 		};

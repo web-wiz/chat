@@ -82,6 +82,17 @@
 	background-color: rgb(155, 242, 155);
 }
 
+.sub-user{
+	border: 1px solid #ddd;
+	border-radius: 5px;
+	display: inline-block;
+	margin: 5px 0 0;
+	padding: 4px;
+}
+.sub-user.active{
+	background-color: rgb(220, 251, 255);
+}
+
 .message-form{
 	display: table; 
 	width: 100%;

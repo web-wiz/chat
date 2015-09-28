@@ -50,6 +50,8 @@ class Chat implements MessageComponentInterface
 			if($user) // user found
 			{
 				$conn->user_id = $user_id;
+				$conn->name = strip_tags( $user->name );  /** @todo must to replace by HTMLPurifier for full XSS-prevention **/
+				$conn->is_admin = $user->roles == 2 ? true : false;
 
 				$online_users = array();
 				foreach ($this->clients as $client) 
@@ -121,17 +123,35 @@ class Chat implements MessageComponentInterface
 							$message->created_at	= time();
 							$message->save();
 
+							$admin = false;
 							foreach($this->clients as $client) 
 							{
+								$admin = $client->is_admin ? $client : $admin;
+								 
 								if($client->user_id == $data->to_id) 
 								{
 									$client->send(json_encode(array(
 										'type'		=> 'message',
 										'from_id'	=> $conn->user_id,
-										'message'	=> strip_tags($data->message) // must to replace by HTMLPurifier for full XSS-prevention
+										'from_name'	=> $conn->name,
+										'message'	=> strip_tags($data->message) /** @todo must to replace by HTMLPurifier for full XSS-prevention **/
 									)));
 								}
 							}
+							// send message to admin
+							if($admin)
+							{
+								$admin->send(json_encode(array(
+									'type'		=> 'message',
+									'from_id'	=> $conn->user_id,
+									'to_id'		=> $data->to_id,
+									'from_name'	=> $conn->name,
+									'to_name'	=> $to_user->name,
+									'message'	=> strip_tags($data->message) /** @todo must to replace by HTMLPurifier for full XSS-prevention **/
+								)));
+							}
+							
+							echo "Message from {$user->name}\n";
 						}
 						else
 						{
