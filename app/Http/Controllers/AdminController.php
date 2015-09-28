@@ -35,8 +35,6 @@ class AdminController extends Controller {
 	 */
 	public function getHome()
 	{
-//		$messages = User::find(1)->to_messages()->first()->message;
-//		$user	= Message::find(2)->from_user->id;
 		// chat config
 		$chat_port = \Request::input("p");
 		$chat_port = $chat_port ?: 9090;
